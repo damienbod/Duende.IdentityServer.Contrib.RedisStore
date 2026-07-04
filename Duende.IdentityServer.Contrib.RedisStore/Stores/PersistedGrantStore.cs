@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading;
 
 namespace Duende.IdentityServer.Contrib.RedisStore.Stores;
 
@@ -44,7 +45,7 @@ public class PersistedGrantStore : IPersistedGrantStore
 
     protected string GetSetKeyWithSession(string subjectId, string clientId, string sessionId) => $"{_options.KeyPrefix}{subjectId}:{clientId}:{sessionId}";
 
-    public virtual async Task StoreAsync(PersistedGrant grant)
+    public virtual async Task StoreAsync(PersistedGrant grant, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(grant);
 
@@ -116,7 +117,7 @@ public class PersistedGrantStore : IPersistedGrantStore
         }
     }
 
-    public virtual async Task<PersistedGrant> GetAsync(string key)
+    public virtual async Task<PersistedGrant> GetAsync(string key, CancellationToken ct)
     {
         try
         {
@@ -132,12 +133,12 @@ public class PersistedGrantStore : IPersistedGrantStore
         }
     }
 
-    public virtual async Task<IEnumerable<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter)
+    public virtual async Task<IReadOnlyCollection<PersistedGrant>> GetAllAsync(PersistedGrantFilter filter, CancellationToken ct)
     {
         try
         {
             var setKey = GetSetKey(filter);
-            var (grants, keysToDelete) = await GetGrants(setKey);
+            var (grants, keysToDelete) = await GetGrants(setKey, ct);
 
             if (keysToDelete.Any())
             {
@@ -153,7 +154,8 @@ public class PersistedGrantStore : IPersistedGrantStore
 
             _logger.LogDebug("{grantsCount} persisted grants found for {subjectId}", grants.Count(), filter.SubjectId);
 
-            return grants.Where(_ => _.HasValue).Select(_ => ConvertFromJson(_)).Where(_ => IsMatch(_, filter));
+            var results = grants.Where(_ => _.HasValue).Select(_ => ConvertFromJson(_)).Where(_ => IsMatch(_, filter));
+            return results.ToArray();
         }
         catch (Exception ex)
         {
@@ -162,7 +164,7 @@ public class PersistedGrantStore : IPersistedGrantStore
         }
     }
 
-    protected virtual async Task<(IEnumerable<RedisValue> grants, IEnumerable<RedisValue> keysToDelete)> GetGrants(string setKey)
+    protected virtual async Task<(IEnumerable<RedisValue> grants, IEnumerable<RedisValue> keysToDelete)> GetGrants(string setKey, CancellationToken ct)
     {
         var grantsKeys = await _database.SetMembersAsync(setKey);
 
@@ -179,11 +181,11 @@ public class PersistedGrantStore : IPersistedGrantStore
         return (grants, keysToDelete);
     }
 
-    public virtual async Task RemoveAsync(string key)
+    public virtual async Task RemoveAsync(string key, CancellationToken ct)
     {
         try
         {
-            var grant = await GetAsync(key);
+            var grant = await GetAsync(key, ct);
             if (grant == null)
             {
                 _logger.LogDebug("no {key} persisted grant found in database", key);
@@ -210,7 +212,7 @@ public class PersistedGrantStore : IPersistedGrantStore
         }
     }
 
-    public virtual async Task RemoveAllAsync(PersistedGrantFilter filter)
+    public virtual async Task RemoveAllAsync(PersistedGrantFilter filter, CancellationToken ct)
     {
         try
         {
@@ -240,14 +242,16 @@ public class PersistedGrantStore : IPersistedGrantStore
         }
     }
 
-    protected virtual string GetSetKey(PersistedGrantFilter filter) =>
-        (!filter.ClientId.IsNullOrEmpty(), !filter.SessionId.IsNullOrEmpty(), !filter.Type.IsNullOrEmpty()) switch
+    protected virtual string GetSetKey(PersistedGrantFilter filter)
+    {
+        return (!filter.ClientId.IsNullOrEmpty(), !filter.SessionId.IsNullOrEmpty(), !filter.Type.IsNullOrEmpty()) switch
         {
             (true, true, false) => GetSetKeyWithSession(filter.SubjectId, filter.ClientId, filter.SessionId),
             (true, _, false) => GetSetKey(filter.SubjectId, filter.ClientId),
             (true, _, true) => GetSetKeyWithType(filter.SubjectId, filter.ClientId, filter.Type),
             _ => GetSetKey(filter.SubjectId),
         };
+    }
 
     protected bool IsMatch(PersistedGrant grant, PersistedGrantFilter filter)
     {
@@ -267,5 +271,6 @@ public class PersistedGrantStore : IPersistedGrantStore
     {
         return JsonSerializer.Deserialize<PersistedGrant>(data);
     }
+
     #endregion
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Duende.IdentityServer.Contrib.RedisStore;
 using Duende.IdentityServer.Models;
 
@@ -26,10 +27,11 @@ where TProfileService : class, IProfileService
     /// This method is called whenever claims about the user are requested (e.g. during token creation or via the userinfo endpoint)
     /// </summary>
     /// <param name="context">The context.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns></returns>
-    public async Task GetProfileDataAsync(ProfileDataRequestContext context)
+    public async Task GetProfileDataAsync(ProfileDataRequestContext context, CancellationToken  ct)
     {
-        await _inner.GetProfileDataAsync(context);
+        await _inner.GetProfileDataAsync(context, ct);
     }
 
     /// <summary>
@@ -37,8 +39,9 @@ where TProfileService : class, IProfileService
     /// (e.g. during token issuance or validation).
     /// </summary>
     /// <param name="context">The context.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns></returns>
-    public async Task IsActiveAsync(IsActiveContext context)
+    public async Task IsActiveAsync(IsActiveContext context, CancellationToken ct)
     {
         var key = $"{_options.KeyPrefix}{_options.KeySelector(context)}";
 
@@ -47,7 +50,7 @@ where TProfileService : class, IProfileService
             var entry = await _cache.GetOrAddAsync(key, _options.Expiration,
                 async () =>
                 {
-                    await _inner.IsActiveAsync(context);
+                    await _inner.IsActiveAsync(context, ct);
                     return new IsActiveContextCacheEntry { IsActive = context.IsActive };
                 });
 
@@ -55,7 +58,7 @@ where TProfileService : class, IProfileService
         }
         else
         {
-            await _inner.IsActiveAsync(context);
+            await _inner.IsActiveAsync(context, ct);
         }
     }
 }
