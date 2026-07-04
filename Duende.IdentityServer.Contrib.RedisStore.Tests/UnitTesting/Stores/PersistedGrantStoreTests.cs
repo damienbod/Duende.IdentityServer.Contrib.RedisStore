@@ -49,9 +49,9 @@ public class PersistedGrantStoreTests
         string key = nameof(StoreAsync_Stores_Entries);
         string expected = "this is a test";
         var grant = new PersistedGrant { Key = key, Data = expected, ClientId = "client1", SubjectId = "sub1", Type = "type1", Expiration = now.AddSeconds(1) };
-        await _store.StoreAsync(grant);
+        await _store.StoreAsync(grant, CancellationToken.None);
 
-        var actual = await _store.GetAsync(key);
+        var actual = await _store.GetAsync(key, CancellationToken.None);
 
         Assert.NotNull(actual);
         Assert.Equal(expected, actual.Data);
@@ -65,11 +65,11 @@ public class PersistedGrantStoreTests
         string key = nameof(Store_And_Remove_Entries);
         string expected = "this is a test";
         var grant = new PersistedGrant { Key = key, Data = expected, ClientId = "client1", SubjectId = "sub1", Type = "type1", Expiration = now.AddSeconds(1) };
-        await _store.StoreAsync(grant);
+        await _store.StoreAsync(grant, CancellationToken.None);
 
-        await _store.RemoveAsync(key);
+        await _store.RemoveAsync(key, CancellationToken.None);
 
-        var actual = await _store.GetAsync(key);
+        var actual = await _store.GetAsync(key, CancellationToken.None);
 
         Assert.Null(actual);
     }
@@ -91,11 +91,11 @@ public class PersistedGrantStoreTests
             }
         ).ToList();
 
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1" });
+        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1" }, CancellationToken.None);
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         Assert.Empty(actual);
     }
@@ -118,11 +118,11 @@ public class PersistedGrantStoreTests
             }
         ).ToList();
 
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1" });
+        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1" }, CancellationToken.None);
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         actual.Should().HaveCount(4);
     }
@@ -145,11 +145,11 @@ public class PersistedGrantStoreTests
             }
         ).ToList();
 
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type2" });
+        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type2" }, CancellationToken.None);
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         actual.Should().HaveCount(2);
     }
@@ -171,11 +171,11 @@ public class PersistedGrantStoreTests
             }
         ).ToList();
 
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type1" });
+        await _store.RemoveAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type1" }, CancellationToken.None);
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         Assert.Empty(actual);
     }
@@ -188,14 +188,14 @@ public class PersistedGrantStoreTests
         string key = $"{nameof(GetAsync_Does_Not_Return_Expired_Entries)}-{now:O}";
         string expected = "this is a test";
         var grant = new PersistedGrant { Key = key, Data = expected, ClientId = "client1", SubjectId = "sub1", Type = "type1", Expiration = now.AddSeconds(1) };
-        await _store.StoreAsync(grant);
+        await _store.StoreAsync(grant, CancellationToken.None);
 
-        var actual = await _store.GetAsync(key);
+        var actual = await _store.GetAsync(key, CancellationToken.None);
 
         Assert.Equal(expected, actual.Data);
 
         Thread.Sleep(TimeSpan.FromSeconds(2));
-        actual = await _store.GetAsync(key);
+        actual = await _store.GetAsync(key, CancellationToken.None);
 
         Assert.Null(actual);
     }
@@ -216,9 +216,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().BeEquivalentTo(expected);
@@ -240,9 +240,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1" })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1" }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().HaveCount(1);
@@ -264,9 +264,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, Type = "type1" })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, Type = "type1" }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().HaveCount(5);
@@ -288,9 +288,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type1" })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", Type = "type1" }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().HaveCount(1);
@@ -313,9 +313,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1" })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1" }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().HaveCount(1);
@@ -338,9 +338,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1", Type = "type1" })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId, ClientId = "client1", SessionId = "session1", Type = "type1" }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         actual.Should().HaveCount(1);
@@ -362,9 +362,9 @@ public class PersistedGrantStoreTests
                 Type = "type1",
             }
         ).ToList();
-        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x)).ToArray());
+        await Task.WhenAll(expected.Select(x => _store.StoreAsync(x, CancellationToken.None)).ToArray());
 
-        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId })).ToList();
+        var actual = (await _store.GetAllAsync(new Duende.IdentityServer.Stores.PersistedGrantFilter { SubjectId = subjectId }, CancellationToken.None)).ToList();
 
         Assert.NotNull(actual);
         Assert.Empty(actual);
