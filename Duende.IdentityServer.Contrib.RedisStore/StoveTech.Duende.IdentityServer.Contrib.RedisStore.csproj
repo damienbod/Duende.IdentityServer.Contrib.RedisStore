@@ -8,7 +8,7 @@
     <Company>Ali Bazzi and StoveTech</Company>
     <AssemblyVersion>7.3.2.0</AssemblyVersion>
     <PackageReleaseNotes>Supports Duende Identity Server v7.3.2</PackageReleaseNotes>
-    <Version>7.3.2.0</Version>
+    <Version>8.0.2.0</Version>
     <PackageProjectUrl>https://github.com/brnn8r/Duende.IdentityServer.Contrib.RedisStore</PackageProjectUrl>
     <PackageIconUrl>https://identityserver.github.io/Documentation/assets/images/icons/IDserver_icon128.jpg</PackageIconUrl>
     <PackageIcon>icon.jpg</PackageIcon>
@@ -16,15 +16,15 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Copyright>Ali Bazzi and StoveTech</Copyright>
-    <FileVersion>7.3.2.0</FileVersion>
+    <FileVersion>8.0.2.0</FileVersion>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="7.3.2" />
-    <PackageReference Include="Duende.IdentityServer.Storage" Version="7.3.2" />
+    <PackageReference Include="Duende.IdentityServer" Version="8.0.2" />
+    <PackageReference Include="Duende.IdentityServer.Storage" Version="8.0.2" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
   </ItemGroup>
 
