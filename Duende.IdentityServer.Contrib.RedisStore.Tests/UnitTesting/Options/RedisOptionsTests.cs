@@ -1,64 +1,63 @@
 ﻿using Duende.IdentityServer.Contrib.RedisStore.Tests.Fakes;
 using Xunit;
 
-namespace Duende.IdentityServer.Contrib.RedisStore.Tests.Options
+namespace Duende.IdentityServer.Contrib.RedisStore.Tests.Options;
+
+public class RedisOptionsTests
 {
-    public class RedisOptionsTests
+    [Fact]
+    public void Multiplexer_Provided_Uses_Provided_Multiplexer()
     {
-        [Fact]
-        public void Multiplexer_Provided_Uses_Provided_Multiplexer()
+        var cacheOptions = new RedisCacheOptions()
         {
-            var cacheOptions = new RedisCacheOptions()
-            {
-                RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
-            };
+            RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
+        };
 
-            Assert.IsType<FakeConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
+        Assert.IsType<FakeConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
 
-            var storeOptions = new RedisOperationalStoreOptions()
-            {
-                RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
-            };
-
-            Assert.IsType<FakeConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
-        }
-
-        [Fact]
-        public void Multiplexer_And_ConnectionString_Provided_Uses_Provided_Multiplexer()
+        var storeOptions = new RedisOperationalStoreOptions()
         {
-            var cacheOptions = new RedisCacheOptions()
-            {
-                RedisConnectionString = "fake", // if connection is made, this will throw
-                RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
-            };
+            RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
+        };
 
-            Assert.IsType<FakeConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
+        Assert.IsType<FakeConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
+    }
 
-            var storeOptions = new RedisOperationalStoreOptions()
-            {
-                RedisConnectionString = "fake", // if connection is made, this will throw
-                RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
-            };
-
-            Assert.IsType<FakeConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
-        }
-
-        [Fact]
-        public void ConnectionString_Provided_Makes_Connection()
+    [Fact]
+    public void Multiplexer_And_ConnectionString_Provided_Uses_Provided_Multiplexer()
+    {
+        var cacheOptions = new RedisCacheOptions()
         {
-            var cacheOptions = new RedisCacheOptions()
-            {
-                RedisConnectionString = ConfigurationUtils.GetConfiguration()["Redis:ConnectionString"]
-            };
+            RedisConnectionString = "fake", // if connection is made, this will throw
+            RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
+        };
 
-            Assert.IsType<StackExchange.Redis.ConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
+        Assert.IsType<FakeConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
 
-            var storeOptions = new RedisOperationalStoreOptions()
-            {
-                RedisConnectionString = ConfigurationUtils.GetConfiguration()["Redis:ConnectionString"]
-            };
+        var storeOptions = new RedisOperationalStoreOptions()
+        {
+            RedisConnectionString = "fake", // if connection is made, this will throw
+            RedisConnectionMultiplexer = new FakeConnectionMultiplexer()
+        };
 
-            Assert.IsType<StackExchange.Redis.ConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
-        }
+        Assert.IsType<FakeConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
+    }
+
+    [Fact]
+    public void ConnectionString_Provided_Makes_Connection()
+    {
+        var cacheOptions = new RedisCacheOptions()
+        {
+            RedisConnectionString = ConfigurationUtils.GetConfiguration()["Redis:ConnectionString"]
+        };
+
+        Assert.IsType<StackExchange.Redis.ConnectionMultiplexer>(cacheOptions.RedisConnectionMultiplexer);
+
+        var storeOptions = new RedisOperationalStoreOptions()
+        {
+            RedisConnectionString = ConfigurationUtils.GetConfiguration()["Redis:ConnectionString"]
+        };
+
+        Assert.IsType<StackExchange.Redis.ConnectionMultiplexer>(storeOptions.RedisConnectionMultiplexer);
     }
 }

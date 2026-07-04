@@ -14,144 +14,143 @@ using System.Threading.Tasks;
 using Duende.IdentityModel.Client;
 using Xunit;
 
-namespace Duende.IdentityServer.Contrib.RedisStore.Tests
+namespace Duende.IdentityServer.Contrib.RedisStore.Tests;
+
+public class CachingProfileServiceTests
 {
-    public class CachingProfileServiceTests
+    private FakeLogger<FakeCache<IsActiveContextCacheEntry>> logger;
+
+    private TestServer CreateTestServer(bool shouldCache)
     {
-        private FakeLogger<FakeCache<IsActiveContextCacheEntry>> logger;
-
-        private TestServer CreateTestServer(bool shouldCache)
-        {
-            return new TestServer(new WebHostBuilder()
-                .ConfigureServices(services =>
+        return new TestServer(new WebHostBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddIdentityServer()
+                .AddDeveloperSigningCredential(persistKey: false)
+                .AddInMemoryApiScopes(new List<ApiScope>
                 {
-                    services.AddIdentityServer()
-                    .AddDeveloperSigningCredential(persistKey: false)
-                    .AddInMemoryApiScopes(new List<ApiScope>
-                    {
-                        new ApiScope("api1")
-                    })
-                    .AddInMemoryApiResources(new List<ApiResource>
-                    {
-                        new ApiResource("api1")
-                        {
-                            ApiSecrets = { new Secret("secret".Sha256())},
-                            Scopes = { "api1" }
-                        }
-                    })
-                    .AddInMemoryClients(new List<Client>
-                    {
-                        new Client
-                        {
-                            ClientId = "client1",
-                            ClientSecrets = { new Secret("secret".Sha256()) },
-                            AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
-                            AccessTokenType = AccessTokenType.Reference,
-                            AllowedScopes = { "api1" }
-                        }
-                    })
-                    .AddFakeLogger<FakeCache<IsActiveContextCacheEntry>>()
-                    .AddFakeMemeoryCaching()
-                    .AddResourceOwnerValidator<FakeResourceOwnerPasswordValidator>()
-                    .AddProfileService<FakeProfileService>()
-                    .AddProfileServiceCache<FakeProfileService>(option =>
-                    {
-                        option.ShouldCache = context => shouldCache;
-                    });
+                    new ApiScope("api1")
                 })
-                .Configure(app =>
+                .AddInMemoryApiResources(new List<ApiResource>
                 {
-                    app.UseIdentityServer();
-                    logger = app.ApplicationServices.GetService<FakeLogger<FakeCache<IsActiveContextCacheEntry>>>();
-                }));
-        }
-
-        [Fact]
-        public async Task Test()
-        {
-            var server = CreateTestServer(shouldCache: true);
-
-            var httpHandler = server.CreateHandler();
-
-            var discoveryClient = new HttpClient(httpHandler);
-            discoveryClient.BaseAddress = new Uri("https://idp");
-            var docs = await discoveryClient.GetDiscoveryDocumentAsync();
-
-            var client = new HttpClient(httpHandler);
-            var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
+                    new ApiResource("api1")
+                    {
+                        ApiSecrets = { new Secret("secret".Sha256())},
+                        Scopes = { "api1" }
+                    }
+                })
+                .AddInMemoryClients(new List<Client>
+                {
+                    new Client
+                    {
+                        ClientId = "client1",
+                        ClientSecrets = { new Secret("secret".Sha256()) },
+                        AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                        AccessTokenType = AccessTokenType.Reference,
+                        AllowedScopes = { "api1" }
+                    }
+                })
+                .AddFakeLogger<FakeCache<IsActiveContextCacheEntry>>()
+                .AddFakeMemeoryCaching()
+                .AddResourceOwnerValidator<FakeResourceOwnerPasswordValidator>()
+                .AddProfileService<FakeProfileService>()
+                .AddProfileServiceCache<FakeProfileService>(option =>
+                {
+                    option.ShouldCache = context => shouldCache;
+                });
+            })
+            .Configure(app =>
             {
-                Address = docs.TokenEndpoint,
-                ClientId = "client1",
-                ClientSecret = "secret",
-                Scope = "api1",
-                UserName = "test",
-                Password = "test"
-            });
+                app.UseIdentityServer();
+                logger = app.ApplicationServices.GetService<FakeLogger<FakeCache<IsActiveContextCacheEntry>>>();
+            }));
+    }
 
-            var introspection = new HttpClient(httpHandler);
-            var introspectionResponse = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
+    [Fact]
+    public async Task Test()
+    {
+        var server = CreateTestServer(shouldCache: true);
+
+        var httpHandler = server.CreateHandler();
+
+        var discoveryClient = new HttpClient(httpHandler);
+        discoveryClient.BaseAddress = new Uri("https://idp");
+        var docs = await discoveryClient.GetDiscoveryDocumentAsync();
+
+        var client = new HttpClient(httpHandler);
+        var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
+        {
+            Address = docs.TokenEndpoint,
+            ClientId = "client1",
+            ClientSecret = "secret",
+            Scope = "api1",
+            UserName = "test",
+            Password = "test"
+        });
+
+        var introspection = new HttpClient(httpHandler);
+        var introspectionResponse = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
+        {
+            Address = docs.IntrospectionEndpoint,
+            Token = tokenResponse.AccessToken,
+            ClientId = "api1",
+            ClientSecret = "secret"
+        });
+        foreach (var _ in Enumerable.Range(1, 10))
+        {
+            var result = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
             {
                 Address = docs.IntrospectionEndpoint,
                 Token = tokenResponse.AccessToken,
                 ClientId = "api1",
                 ClientSecret = "secret"
             });
-            foreach (var _ in Enumerable.Range(1, 10))
-            {
-                var result = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
-                {
-                    Address = docs.IntrospectionEndpoint,
-                    Token = tokenResponse.AccessToken,
-                    ClientId = "api1",
-                    ClientSecret = "secret"
-                });
-                result.IsActive.Should().BeTrue();
-            }
-            logger.AccessCount["Cache hit for 1"].Should().Be(11);
+            result.IsActive.Should().BeTrue();
         }
+        logger.AccessCount["Cache hit for 1"].Should().Be(11);
+    }
 
-        [Fact]
-        public async Task Test2()
+    [Fact]
+    public async Task Test2()
+    {
+        var server = CreateTestServer(shouldCache: false);
+
+        var httpHandler = server.CreateHandler();
+
+        var discoveryClient = new HttpClient(httpHandler);
+        discoveryClient.BaseAddress = new Uri("https://idp");
+        var docs = await discoveryClient.GetDiscoveryDocumentAsync();
+
+        var client = new HttpClient(httpHandler);
+        var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
         {
-            var server = CreateTestServer(shouldCache: false);
+            Address = docs.TokenEndpoint,
+            ClientId = "client1",
+            ClientSecret = "secret",
+            Scope = "api1",
+            UserName = "test",
+            Password = "test"
+        });
 
-            var httpHandler = server.CreateHandler();
-
-            var discoveryClient = new HttpClient(httpHandler);
-            discoveryClient.BaseAddress = new Uri("https://idp");
-            var docs = await discoveryClient.GetDiscoveryDocumentAsync();
-
-            var client = new HttpClient(httpHandler);
-            var tokenResponse = await client.RequestPasswordTokenAsync(new PasswordTokenRequest
-            {
-                Address = docs.TokenEndpoint,
-                ClientId = "client1",
-                ClientSecret = "secret",
-                Scope = "api1",
-                UserName = "test",
-                Password = "test"
-            });
-
-            var introspection = new HttpClient(httpHandler);
-            var introspectionResponse = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
+        var introspection = new HttpClient(httpHandler);
+        var introspectionResponse = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
+        {
+            Address = docs.IntrospectionEndpoint,
+            Token = tokenResponse.AccessToken,
+            ClientId = "api1",
+            ClientSecret = "secret"
+        });
+        foreach (var _ in Enumerable.Range(1, 10))
+        {
+            var result = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
             {
                 Address = docs.IntrospectionEndpoint,
                 Token = tokenResponse.AccessToken,
                 ClientId = "api1",
                 ClientSecret = "secret"
             });
-            foreach (var _ in Enumerable.Range(1, 10))
-            {
-                var result = await introspection.IntrospectTokenAsync(new TokenIntrospectionRequest
-                {
-                    Address = docs.IntrospectionEndpoint,
-                    Token = tokenResponse.AccessToken,
-                    ClientId = "api1",
-                    ClientSecret = "secret"
-                });
-                result.IsActive.Should().BeTrue();
-            }
-            logger.AccessCount.Should().BeEmpty();
+            result.IsActive.Should().BeTrue();
         }
+        logger.AccessCount.Should().BeEmpty();
     }
 }
