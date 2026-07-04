@@ -103,7 +103,6 @@ public class CachingProfileServiceTests
             });
             result.IsActive.Should().BeTrue();
         }
-        // Cache hits cannot be verified without FakeCache, but the test still validates caching behavior
     }
 
     [Fact]
@@ -147,6 +146,6 @@ public class CachingProfileServiceTests
             });
             result.IsActive.Should().BeTrue();
         }
-        // Cache should not be used when shouldCache is false
+        logger.AccessCount.Should().BeEmpty();
     }
 }
