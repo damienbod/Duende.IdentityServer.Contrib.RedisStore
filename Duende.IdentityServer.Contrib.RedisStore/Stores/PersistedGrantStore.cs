@@ -77,7 +77,7 @@ public class PersistedGrantStore : IPersistedGrantStore
                 await transaction.SetAddAsync(setKeyforClient, grantKey);
                 await transaction.SetAddAsync(setKeyforType, grantKey);
 
-                if (!grant.SessionId.IsNullOrEmpty())
+                if (!string.IsNullOrEmpty(grant.SessionId))
                 {
                     await transaction.SetAddAsync(setKetforSession, grantKey);
                 }                     
@@ -92,9 +92,8 @@ public class PersistedGrantStore : IPersistedGrantStore
                 {
                     await transaction.KeyExpireAsync(setKeyforClient, expiresIn);
                 }
-                    
 
-                if (!grant.SessionId.IsNullOrEmpty() && (ttlofSessionSet.Result ?? TimeSpan.Zero) <= expiresIn)
+                if (!string.IsNullOrEmpty(grant.SessionId) && (ttlofSessionSet.Result ?? TimeSpan.Zero) <= expiresIn)
                 {
                     await transaction.KeyExpireAsync(setKetforSession, expiresIn);
                 }
@@ -244,7 +243,7 @@ public class PersistedGrantStore : IPersistedGrantStore
 
     protected virtual string GetSetKey(PersistedGrantFilter filter)
     {
-        return (!filter.ClientId.IsNullOrEmpty(), !filter.SessionId.IsNullOrEmpty(), !filter.Type.IsNullOrEmpty()) switch
+        return (!string.IsNullOrEmpty(filter.ClientId), !string.IsNullOrEmpty(filter.SessionId), !string.IsNullOrEmpty(filter.Type)) switch
         {
             (true, true, false) => GetSetKeyWithSession(filter.SubjectId, filter.ClientId, filter.SessionId),
             (true, _, false) => GetSetKey(filter.SubjectId, filter.ClientId),
@@ -255,10 +254,10 @@ public class PersistedGrantStore : IPersistedGrantStore
 
     protected bool IsMatch(PersistedGrant grant, PersistedGrantFilter filter)
     {
-        return (filter.SubjectId.IsNullOrEmpty() ? true : grant.SubjectId == filter.SubjectId)
-            && (filter.ClientId.IsNullOrEmpty() ? true : grant.ClientId == filter.ClientId)
-            && (filter.SessionId.IsNullOrEmpty() ? true : grant.SessionId == filter.SessionId)
-            && (filter.Type.IsNullOrEmpty() ? true : grant.Type == filter.Type);
+        return (string.IsNullOrEmpty(filter.SubjectId) ? true : grant.SubjectId == filter.SubjectId)
+            && (string.IsNullOrEmpty(filter.ClientId) ? true : grant.ClientId == filter.ClientId)
+            && (string.IsNullOrEmpty(filter.SessionId) ? true : grant.SessionId == filter.SessionId)
+            && (string.IsNullOrEmpty(filter.Type) ? true : grant.Type == filter.Type);
     }
 
     #region Json
