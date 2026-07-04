@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Duende.IdentityServer.Contrib.RedisStore;
 using Duende.IdentityServer.Models;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Duende.IdentityServer.Services;
 
@@ -13,10 +15,10 @@ public class CachingProfileService<TProfileService> : IProfileService
 where TProfileService : class, IProfileService
 {
     private readonly TProfileService _inner;
-    private readonly ICache<IsActiveContextCacheEntry> _cache;
+    private readonly IDistributedCache _cache;
     private readonly ProfileServiceCachingOptions<TProfileService> _options;
 
-    public CachingProfileService(TProfileService inner, ICache<IsActiveContextCacheEntry> cache, ProfileServiceCachingOptions<TProfileService> options)
+    public CachingProfileService(TProfileService inner, IDistributedCache cache, ProfileServiceCachingOptions<TProfileService> options)
     {
         _inner = inner;
         _cache = cache;
@@ -47,14 +49,31 @@ where TProfileService : class, IProfileService
 
         if (_options.ShouldCache(context))
         {
-            var entry = await _cache.GetOrAddAsync(key, _options.Expiration,
-                async () =>
-                {
-                    await _inner.IsActiveAsync(context, ct);
-                    return new IsActiveContextCacheEntry { IsActive = context.IsActive };
-                });
+            // Try to get from cache
+            var cachedBytes = await _cache.GetAsync(key, ct);
 
-            context.IsActive = entry.IsActive;
+            if (cachedBytes != null)
+            {
+                // Deserialize from cache
+                var entry = JsonSerializer.Deserialize<IsActiveContextCacheEntry>(cachedBytes);
+                context.IsActive = entry?.IsActive ?? false;
+            }
+            else
+            {
+                // Not in cache, call inner service
+                await _inner.IsActiveAsync(context, ct);
+
+                // Store in cache
+                var entry = new IsActiveContextCacheEntry { IsActive = context.IsActive };
+                var serialized = JsonSerializer.SerializeToUtf8Bytes(entry);
+
+                var options = new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = _options.Expiration
+                };
+
+                await _cache.SetAsync(key, serialized, options, ct);
+            }
         }
         else
         {

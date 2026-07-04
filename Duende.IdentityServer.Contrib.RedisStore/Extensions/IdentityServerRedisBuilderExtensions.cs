@@ -1,5 +1,4 @@
 ﻿using Duende.IdentityServer.Contrib.RedisStore;
-using Duende.IdentityServer.Contrib.RedisStore.Cache;
 using Duende.IdentityServer.Contrib.RedisStore.Stores;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
@@ -40,8 +39,12 @@ public static class IdentityServerRedisBuilderExtensions
         optionsBuilder?.Invoke(options);
         builder.Services.AddSingleton(options);
 
+        //builder.Services.AddStackExchangeRedisCache(...);
+
         builder.Services.AddScoped<RedisMultiplexer<RedisCacheOptions>>();
-        builder.Services.AddTransient(typeof(ICache<>), typeof(RedisCache<>));
+      
+        builder.Services.AddHybridCache();
+
         builder.Services.TryAddSingleton(TimeProvider.System);
         return builder;
     }
