@@ -8,8 +8,7 @@ namespace Duende.IdentityServer.Contrib.RedisStore;
 ///<summary>
 /// Represents the Profile Service caching options.
 ///</summary>
-public class ProfileServiceCachingOptions<T>
-    where T : class, IProfileService
+public class ProfileServiceCachingOptions<T> where T : class, IProfileService
 {
     ///<summary>
     /// Key selector for IsActiveContext, defaults select the Subject (sub) claim value.
@@ -35,11 +34,11 @@ public class ProfileServiceCachingOptions<T>
     {
         get
         {
-            return string.IsNullOrEmpty(this._keyPrefix) ? this._keyPrefix : $"{_keyPrefix}:";
+            return string.IsNullOrEmpty(_keyPrefix) ? _keyPrefix : $"{_keyPrefix}:";
         }
         set
         {
-            this._keyPrefix = value;
+            _keyPrefix = value;
         }
     }
 }

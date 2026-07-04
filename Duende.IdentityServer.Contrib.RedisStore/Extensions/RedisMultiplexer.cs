@@ -10,13 +10,13 @@ public class RedisMultiplexer<T> where T : RedisOptions
 {
     public RedisMultiplexer(T redisOptions)
     {
-        this.RedisOptions = redisOptions;
-        this.GetDatabase();
+        RedisOptions = redisOptions;
+        GetDatabase();
     }
 
     private void GetDatabase()
     {
-        this.Database = this.RedisOptions.Multiplexer.GetDatabase(string.IsNullOrEmpty(this.RedisOptions.RedisConnectionString) ? -1 : this.RedisOptions.Db);
+        Database = RedisOptions.Multiplexer.GetDatabase(string.IsNullOrEmpty(RedisOptions.RedisConnectionString) ? -1 : RedisOptions.Db);
     }
 
     internal T RedisOptions { get; }

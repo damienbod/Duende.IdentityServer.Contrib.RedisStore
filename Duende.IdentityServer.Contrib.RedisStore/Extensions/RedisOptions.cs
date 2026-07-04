@@ -27,20 +27,20 @@ public abstract class RedisOptions
     {
         get
         {
-            return this.multiplexer.Value;
+            return _multiplexer.Value;
         }
         set
         {
             // if someone already asked for the multiplexer before, we
             // may have already connected using the connection string.
             // in that case we must disconnect so we don't leak anything.
-            if (this.multiplexer.IsValueCreated && this.multiplexer.Value != this.providedMultiplexer)
+            if (_multiplexer.IsValueCreated && _multiplexer.Value != _providedMultiplexer)
             {
-                this.multiplexer.Value.Dispose();
-                this.multiplexer = new Lazy<IConnectionMultiplexer>(() => value);
+                _multiplexer.Value.Dispose();
+                _multiplexer = new Lazy<IConnectionMultiplexer>(() => value);
             }
 
-            this.providedMultiplexer = value;
+            _providedMultiplexer = value;
         }
     }
 
@@ -58,17 +58,17 @@ public abstract class RedisOptions
     {
         get
         {
-            return string.IsNullOrEmpty(this._keyPrefix) ? this._keyPrefix : $"{_keyPrefix}:";
+            return string.IsNullOrEmpty(_keyPrefix) ? _keyPrefix : $"{_keyPrefix}:";
         }
         set
         {
-            this._keyPrefix = value;
+            _keyPrefix = value;
         }
     }
 
     internal RedisOptions()
     {
-        this.multiplexer = GetConnectionMultiplexer();
+        _multiplexer = GetConnectionMultiplexer();
     }
 
     private Lazy<IConnectionMultiplexer> GetConnectionMultiplexer()
@@ -77,9 +77,9 @@ public abstract class RedisOptions
             () =>
             {
                 // if the user provided a multiplexer, we should use it
-                if (this.providedMultiplexer != null)
+                if (this._providedMultiplexer != null)
                 {
-                    return this.providedMultiplexer;
+                    return this._providedMultiplexer;
                 }
 
                 // otherwise we must make our own connection
@@ -89,10 +89,10 @@ public abstract class RedisOptions
             });
     }
 
-    private IConnectionMultiplexer providedMultiplexer = null;
-    private Lazy<IConnectionMultiplexer> multiplexer = null;
+    private IConnectionMultiplexer _providedMultiplexer = null;
+    private Lazy<IConnectionMultiplexer> _multiplexer = null;
 
-    internal IConnectionMultiplexer Multiplexer => this.multiplexer.Value;
+    internal IConnectionMultiplexer Multiplexer => _multiplexer.Value;
 }
 
 /// <summary>
