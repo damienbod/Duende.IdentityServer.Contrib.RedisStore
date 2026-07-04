@@ -11,17 +11,15 @@ namespace Duende.IdentityServer.Services;
 public class CachingProfileService<TProfileService> : IProfileService
 where TProfileService : class, IProfileService
 {
-    private readonly TProfileService inner;
-
-    private readonly ICache<IsActiveContextCacheEntry> cache;
-
-    private readonly ProfileServiceCachingOptions<TProfileService> options;
+    private readonly TProfileService _inner;
+    private readonly ICache<IsActiveContextCacheEntry> _cache;
+    private readonly ProfileServiceCachingOptions<TProfileService> _options;
 
     public CachingProfileService(TProfileService inner, ICache<IsActiveContextCacheEntry> cache, ProfileServiceCachingOptions<TProfileService> options)
     {
-        this.inner = inner;
-        this.cache = cache;
-        this.options = options;
+        _inner = inner;
+        _cache = cache;
+        _options = options;
     }
 
     /// <summary>
@@ -31,7 +29,7 @@ where TProfileService : class, IProfileService
     /// <returns></returns>
     public async Task GetProfileDataAsync(ProfileDataRequestContext context)
     {
-        await this.inner.GetProfileDataAsync(context);
+        await _inner.GetProfileDataAsync(context);
     }
 
     /// <summary>
@@ -42,30 +40,22 @@ where TProfileService : class, IProfileService
     /// <returns></returns>
     public async Task IsActiveAsync(IsActiveContext context)
     {
-        var key = $"{options.KeyPrefix}{options.KeySelector(context)}";
+        var key = $"{_options.KeyPrefix}{_options.KeySelector(context)}";
 
-        if (options.ShouldCache(context))
+        if (_options.ShouldCache(context))
         {
-            var entry = await cache.GetOrAddAsync(key, options.Expiration,
-                          async () =>
-                          {
-                              await inner.IsActiveAsync(context);
-                              return new IsActiveContextCacheEntry { IsActive = context.IsActive };
-                          });
+            var entry = await _cache.GetOrAddAsync(key, _options.Expiration,
+                async () =>
+                {
+                    await _inner.IsActiveAsync(context);
+                    return new IsActiveContextCacheEntry { IsActive = context.IsActive };
+                });
 
             context.IsActive = entry.IsActive;
         }
         else
         {
-            await inner.IsActiveAsync(context);
+            await _inner.IsActiveAsync(context);
         }
     }
-}
-
-/// <summary>
-/// Represents cache entry for IsActiveContext
-/// </summary>
-public class IsActiveContextCacheEntry
-{
-    public bool IsActive { get; set; }
 }

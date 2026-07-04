@@ -14,36 +14,35 @@ namespace Duende.IdentityServer.Contrib.RedisStore.Cache;
 /// <typeparam name="T"></typeparam>
 public class RedisCache<T> : ICache<T> where T : class
 {
-    private readonly IDatabase database;
+    private readonly IDatabase _database;
 
-    private readonly RedisCacheOptions options;
+    private readonly RedisCacheOptions _options;
 
-    private readonly ILogger<RedisCache<T>> logger;
+    private readonly ILogger<RedisCache<T>> _logger;
 
     public RedisCache(RedisMultiplexer<RedisCacheOptions> multiplexer, ILogger<RedisCache<T>> logger)
     {
-        if (multiplexer is null)
-            throw new ArgumentNullException(nameof(multiplexer));
-        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(multiplexer);
 
-        this.options = multiplexer.RedisOptions;
-        this.database = multiplexer.Database;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _options = multiplexer.RedisOptions;
+        _database = multiplexer.Database;
     }
 
-    private string GetKey(string key) => $"{this.options.KeyPrefix}{typeof(T).FullName}:{key}";
+    private string GetKey(string key) => $"{_options.KeyPrefix}{typeof(T).FullName}:{key}";
 
     public async Task<T> GetAsync(string key)
     {
         var cacheKey = GetKey(key);
-        var item = await this.database.StringGetAsync(cacheKey);
+        var item = await _database.StringGetAsync(cacheKey);
         if (item.HasValue)
         {
-            logger.LogDebug("retrieved {type} with Key: {key} from Redis Cache successfully.", typeof(T).FullName, key);
+            _logger.LogDebug("retrieved {type} with Key: {key} from Redis Cache successfully.", typeof(T).FullName, key);
             return Deserialize(item);
         }
         else
         {
-            logger.LogDebug("missed {type} with Key: {key} from Redis Cache.", typeof(T).FullName, key);
+            _logger.LogDebug("missed {type} with Key: {key} from Redis Cache.", typeof(T).FullName, key);
             return default;
         }
     }
@@ -51,8 +50,8 @@ public class RedisCache<T> : ICache<T> where T : class
     public async Task SetAsync(string key, T item, TimeSpan expiration)
     {
         var cacheKey = GetKey(key);
-        await this.database.StringSetAsync(cacheKey, Serialize(item), expiration);
-        logger.LogDebug("persisted {type} with Key: {key} in Redis Cache successfully.", typeof(T).FullName, key);
+        await _database.StringSetAsync(cacheKey, Serialize(item), expiration);
+        _logger.LogDebug("persisted {type} with Key: {key} in Redis Cache successfully.", typeof(T).FullName, key);
     }
 
 
@@ -65,7 +64,7 @@ public class RedisCache<T> : ICache<T> where T : class
             return item;
         }
 
-        logger.LogDebug("cache miss for type: {type} with key: {key} from Redis Cache.", typeof(T).FullName, key);
+        _logger.LogDebug("cache miss for type: {type} with key: {key} from Redis Cache.", typeof(T).FullName, key);
 
         if(get == null || (item = await get()) == default)
         {
@@ -79,7 +78,7 @@ public class RedisCache<T> : ICache<T> where T : class
     public async Task RemoveAsync(string key)
     {
         var cacheKey = GetKey(key);
-        await this.database.KeyDeleteAsync(cacheKey);
+        await _database.KeyDeleteAsync(cacheKey);
     }
     #region Json
     private JsonSerializerOptions SerializerSettings
@@ -94,14 +93,13 @@ public class RedisCache<T> : ICache<T> where T : class
 
     private T Deserialize(string json)
     {
-        return JsonSerializer.Deserialize<T>(json, this.SerializerSettings);
+        return JsonSerializer.Deserialize<T>(json, SerializerSettings);
     }
 
     private string Serialize(T item)
     {
-        return JsonSerializer.Serialize(item, this.SerializerSettings);
+        return JsonSerializer.Serialize(item, SerializerSettings);
     }
-
 
     #endregion
 }
