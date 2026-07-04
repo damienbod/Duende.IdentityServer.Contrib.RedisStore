@@ -8,24 +8,24 @@ namespace Duende.IdentityServer.Contrib.RedisStore.Tests.Cache;
 
 public class FakeCache<T> : ICache<T> where T : class
 {
-    private readonly IMemoryCache cache;
+    private readonly IMemoryCache _cache;
 
-    private readonly ILogger<FakeCache<T>> logger;
+    private readonly ILogger<FakeCache<T>> _logger;
 
     public FakeCache(IMemoryCache memoryCache, FakeLogger<FakeCache<T>> logger)
     {
-        cache = memoryCache;
-        this.logger = logger;
+        _cache = memoryCache;
+        _logger = logger;
     }
 
     public Task<T> GetAsync(string key)
     {
-        var result = cache.Get(key);
+        var result = _cache.Get(key);
 
         if (result == null)
-            logger.LogDebug($"Cache miss for {key}");
+            _logger.LogDebug($"Cache miss for {key}");
         else
-            logger.LogDebug($"Cache hit for {key}");
+            _logger.LogDebug($"Cache hit for {key}");
 
         return Task.FromResult((T)result);
     }
@@ -50,13 +50,13 @@ public class FakeCache<T> : ICache<T> where T : class
 
     public Task RemoveAsync(string key)
     {
-        cache.Remove(key);
+        _cache.Remove(key);
         return Task.CompletedTask;
     }
 
     public Task SetAsync(string key, T item, TimeSpan expiration)
     {
-        cache.Set(key, item, expiration);
+        _cache.Set(key, item, expiration);
         return Task.CompletedTask;
     }      
 

@@ -164,7 +164,8 @@ public class PersistedGrantStore : IPersistedGrantStore
 
     protected virtual async Task<(IEnumerable<RedisValue> grants, IEnumerable<RedisValue> keysToDelete)> GetGrants(string setKey)
     {
-        var grantsKeys = await this._database.SetMembersAsync(setKey);
+        var grantsKeys = await _database.SetMembersAsync(setKey);
+
         if (!grantsKeys.Any())
         {
             return (Enumerable.Empty<RedisValue>(), Enumerable.Empty<RedisValue>());

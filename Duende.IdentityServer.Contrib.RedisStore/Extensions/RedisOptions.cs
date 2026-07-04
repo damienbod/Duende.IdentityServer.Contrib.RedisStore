@@ -77,15 +77,15 @@ public abstract class RedisOptions
             () =>
             {
                 // if the user provided a multiplexer, we should use it
-                if (this._providedMultiplexer != null)
+                if (_providedMultiplexer != null)
                 {
-                    return this._providedMultiplexer;
+                    return _providedMultiplexer;
                 }
 
                 // otherwise we must make our own connection
-                return string.IsNullOrEmpty(this.RedisConnectionString)
-                    ? ConnectionMultiplexer.Connect(this.ConfigurationOptions)
-                    : ConnectionMultiplexer.Connect(this.RedisConnectionString);
+                return string.IsNullOrEmpty(RedisConnectionString)
+                    ? ConnectionMultiplexer.Connect(ConfigurationOptions)
+                    : ConnectionMultiplexer.Connect(RedisConnectionString);
             });
     }
 
