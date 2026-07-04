@@ -3,6 +3,7 @@ using Duende.IdentityServer.Services;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 
@@ -12,7 +13,7 @@ public class FakeProfileService : IProfileService
 {
     public IEnumerable<Claim> Claims = new List<Claim>();
 
-    public Task GetProfileDataAsync(ProfileDataRequestContext context)
+    public Task GetProfileDataAsync(ProfileDataRequestContext context, CancellationToken cancellationToken)
     {
         context.IssuedClaims = Claims.ToList();
         return Task.CompletedTask;
@@ -20,7 +21,7 @@ public class FakeProfileService : IProfileService
 
     public Action<IsActiveContext> IsActive;
 
-    public Task IsActiveAsync(IsActiveContext context)
+    public Task IsActiveAsync(IsActiveContext context, CancellationToken cancellationToken)
     {
         IsActive?.Invoke(context);
         return Task.CompletedTask;

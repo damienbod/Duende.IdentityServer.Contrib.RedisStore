@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Duende.IdentityServer.Contrib.RedisStore.Cache;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -10,8 +9,6 @@ namespace Duende.IdentityServer.Contrib.RedisStore.Tests.Cache;
 
 public class RedisCacheTests
 {
-    private readonly RedisCache<string> _cache;
-
     public RedisCacheTests()
     {
         var logger = new Mock<ILogger<RedisCache<string>>>();

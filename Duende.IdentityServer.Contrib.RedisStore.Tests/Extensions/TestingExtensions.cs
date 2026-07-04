@@ -1,6 +1,7 @@
 ﻿using Duende.IdentityServer.Contrib.RedisStore.Tests;
 using Duende.IdentityServer.Contrib.RedisStore.Tests.Cache;
 using Duende.IdentityServer.Services;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ internal static class TestingExtensions
     public static IIdentityServerBuilder AddFakeMemeoryCaching(this IIdentityServerBuilder builder)
     {
         builder.Services.AddSingleton<IMemoryCache>(new MemoryCache(new MemoryCacheOptions()));
-        builder.Services.AddScoped(typeof(ICache<>), typeof(FakeCache<>));
+        builder.Services.AddSingleton<IDistributedCache, MemoryDistributedCache>();
         return builder;
     }
 
