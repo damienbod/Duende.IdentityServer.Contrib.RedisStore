@@ -169,3 +169,12 @@ since Redis has a [key Expiration](https://redis.io/commands/expire) feature bas
 ## Feedback
 
 If you have any comments, suggestions or improvements please let me know. I was not the original author of the code. I am just updating this pacakge to work with the Duende.IdentityServer libraries.
+
+
+## Development
+
+To run the tests, run redis locally.
+
+```
+podman run -d --name local-redis -p 6379:6379 docker.io/library/redis:latest
+```
