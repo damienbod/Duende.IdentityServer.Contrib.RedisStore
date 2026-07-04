@@ -70,5 +70,10 @@ namespace Duende.IdentityServer.Contrib.RedisStore.Tests.Fakes
         public T Wait<T>(Task<T> task) => default(T);
         public void WaitAll(params Task[] tasks) { }
         public void AddLibraryNameSuffix(string suffix) { }
+
+        public IServer GetServer(RedisKey key, object asyncState = null, CommandFlags flags = CommandFlags.None)
+        {
+            return null;
+        }
     }
 }
